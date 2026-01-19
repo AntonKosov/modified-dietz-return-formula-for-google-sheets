@@ -15,6 +15,41 @@
  * @customfunction
  */
 function modifiedDietzReturn(startDate, startValue, endDate, endValue, contributionDates, contributions) {
+    const inputs = parseAndValidateInputs(startDate, startValue, endDate, endValue, contributionDates, contributions);
+    return modifiedDietzReturnImpl(inputs.parsedStartDate, inputs.parsedStartValue, inputs.parsedEndDate, inputs.parsedEndValue, inputs.cashFlows);
+}
+
+/**
+ * Calculates the annualized investment return using the Modified Dietz method.
+ * 
+ * Annualizes the Modified Dietz return based on the number of days in the period.
+ * Formula: (1 + R)^(365.25 / Days) - 1
+ * 
+ * @param {number|string|Date} startDate - Portfolio start date
+ * @param {number|string} startValue - Initial portfolio value
+ * @param {number|string|Date} endDate - Portfolio end date  
+ * @param {number|string} endValue - Final portfolio value
+ * @param {Array<Array<Date>>|Date} contributionDates - Array of contribution dates or single date
+ * @param {Array<Array<number>>|number} contributions - Array of contribution amounts or single amount (negative for withdrawals)
+ * @return {number} Annualized investment return as a decimal
+ * @throws {string} When input parameters are invalid
+ * @customfunction
+ */
+function modifiedDietzReturnAnnualized(startDate, startValue, endDate, endValue, contributionDates, contributions) {
+    const inputs = parseAndValidateInputs(startDate, startValue, endDate, endValue, contributionDates, contributions);
+    const periodReturn = modifiedDietzReturnImpl(inputs.parsedStartDate, inputs.parsedStartValue, inputs.parsedEndDate, inputs.parsedEndValue, inputs.cashFlows);
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const daysInPeriod = (inputs.parsedEndDate - inputs.parsedStartDate) / msPerDay;
+
+    if (daysInPeriod <= 0) {
+        return 0;
+    }
+
+    const daysInYear = 365.25;
+    return Math.pow(1 + periodReturn, daysInYear / daysInPeriod) - 1;
+}
+
+function parseAndValidateInputs(startDate, startValue, endDate, endValue, contributionDates, contributions) {
     // Validate input parameter consistency
     const isArrayOfDates = Array.isArray(contributionDates);
     const isArrayOfContributions = Array.isArray(contributions);
@@ -81,5 +116,11 @@ function modifiedDietzReturn(startDate, startValue, endDate, endValue, contribut
         addCashFlow(contributionDates, contributions);
     }
 
-    return modifiedDietzReturnImpl(parsedStartDate, parsedStartValue, parsedEndDate, parsedEndValue, cashFlows);
+    return {
+        parsedStartDate,
+        parsedStartValue,
+        parsedEndDate,
+        parsedEndValue,
+        cashFlows
+    };
 }
